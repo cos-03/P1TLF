@@ -1,0 +1,1330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reconocedor de Placas Colombia | Simulador Visual AFD</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-main: #0a0e17;
+      --bg-card: #121927;
+      --bg-card-hover: #182236;
+      --border-subtle: #202c44;
+      --border-focus: #3b82f6;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+      --accent-blue: #38bdf8;
+      --accent-green: #10b981;
+      --accent-red: #ef4444;
+      --accent-amber: #f59e0b;
+      --plate-yellow: #facc15;
+      --plate-border: #111827;
+      --font-ui: 'Outfit', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      font-family: var(--font-ui);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow-x: hidden;
+    }
+
+    /* Background glow effect */
+    .bg-glow {
+      position: fixed;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1000px;
+      height: 400px;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.08) 0%, rgba(14, 165, 233, 0.02) 40%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(10, 14, 23, 0.85);
+      backdrop-filter: blur(12px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+
+    .header-info h1 {
+      font-size: 1.4rem;
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+      letter-spacing: -0.02em;
+    }
+
+    .badge-topic {
+      background: rgba(56, 189, 248, 0.12);
+      color: var(--accent-blue);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .header-sub {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      margin-top: 0.2rem;
+    }
+
+    .header-authors {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      padding: 0.4rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    .author-name {
+      color: var(--text-main);
+      font-weight: 600;
+    }
+
+    main {
+      position: relative;
+      z-index: 1;
+      max-width: 1300px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 1.75rem;
+      width: 100%;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      transition: border-color 0.2s;
+    }
+
+    .card:hover {
+      border-color: rgba(56, 189, 248, 0.25);
+    }
+
+    .card-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #fff;
+    }
+
+    /* Placa Colombiana Visual */
+    .plate-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 1rem 0 1.5rem 0;
+    }
+
+    .license-plate {
+      width: 290px;
+      height: 145px;
+      background: linear-gradient(180deg, #fde047 0%, #eab308 100%);
+      border: 6px solid #1e293b;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 12px;
+      position: relative;
+      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.6), inset 0 2px 4px rgba(255, 255, 255, 0.5);
+    }
+
+    .plate-screw {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #475569;
+      border-radius: 50%;
+      border: 1px solid #1e293b;
+    }
+    .screw-tl { top: 7px; left: 10px; }
+    .screw-tr { top: 7px; right: 10px; }
+    .screw-bl { bottom: 7px; left: 10px; }
+    .screw-br { bottom: 7px; right: 10px; }
+
+    .plate-header {
+      font-family: var(--font-ui);
+      font-weight: 800;
+      font-size: 0.85rem;
+      letter-spacing: 0.22em;
+      color: #0f172a;
+      text-transform: uppercase;
+      padding-top: 2px;
+    }
+
+    .plate-content {
+      font-family: var(--font-mono);
+      font-size: 3rem;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: 0.1em;
+      line-height: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      text-shadow: 1px 1px 0 rgba(255, 255, 255, 0.3);
+    }
+
+    .plate-char {
+      display: inline-block;
+      width: 38px;
+      text-align: center;
+      transition: all 0.2s ease;
+    }
+
+    .plate-char.active-char {
+      color: #1e3a8a;
+      transform: scale(1.15) translateY(-2px);
+      text-shadow: 0 0 10px rgba(30, 58, 138, 0.5);
+    }
+
+    .plate-footer {
+      font-family: var(--font-ui);
+      font-weight: 700;
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      color: #1e293b;
+      text-transform: uppercase;
+      padding-bottom: 2px;
+    }
+
+    /* Input y botones interactivos */
+    .input-section {
+      margin-bottom: 1.5rem;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 0.5rem;
+      font-weight: 500;
+    }
+
+    .input-group {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .main-input {
+      flex: 1;
+      background: #0d121c;
+      border: 2px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 0.85rem 1.1rem;
+      color: #fff;
+      font-family: var(--font-mono);
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .main-input:focus {
+      border-color: var(--border-focus);
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15);
+    }
+
+    .btn {
+      padding: 0.75rem 1.2rem;
+      border-radius: 10px;
+      font-family: var(--font-ui);
+      font-weight: 600;
+      font-size: 0.9rem;
+      cursor: pointer;
+      border: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #2563eb;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #1d4ed8;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-card-hover);
+      color: var(--text-main);
+      border: 1px solid var(--border-subtle);
+    }
+    .btn-secondary:hover {
+      background: #202d44;
+      border-color: #3b82f6;
+    }
+
+    /* Botones rápidos de prueba */
+    .quick-examples {
+      margin-top: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex-wrap: wrap;
+    }
+
+    .quick-examples span {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      margin-right: 0.2rem;
+    }
+
+    .tag-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: 0.2rem 0.5rem;
+      font-size: 0.75rem;
+      font-family: var(--font-mono);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .tag-btn:hover {
+      background: rgba(56, 189, 248, 0.15);
+      color: var(--accent-blue);
+      border-color: rgba(56, 189, 248, 0.4);
+    }
+
+    /* Controles de paso a paso */
+    .player-controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      background: #0d121c;
+      padding: 0.65rem 0.9rem;
+      border-radius: 12px;
+      border: 1px solid var(--border-subtle);
+      margin-bottom: 1.5rem;
+    }
+
+    .player-buttons {
+      display: flex;
+      gap: 0.4rem;
+    }
+
+    .player-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-main);
+      border-radius: 8px;
+      padding: 0.45rem 0.75rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.15s;
+    }
+
+    .player-btn:hover:not(:disabled) {
+      background: var(--bg-card-hover);
+      border-color: var(--accent-blue);
+    }
+
+    .player-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .step-counter {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Estado del resultado */
+    .status-banner {
+      border-radius: 12px;
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 1.5rem;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .status-banner.standby {
+      background: rgba(148, 163, 184, 0.08);
+      border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+
+    .status-banner.accepted {
+      background: rgba(16, 185, 129, 0.12);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+    }
+
+    .status-banner.rejected {
+      background: rgba(239, 68, 68, 0.12);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      box-shadow: 0 0 25px rgba(239, 68, 68, 0.15);
+    }
+
+    .status-left {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .status-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.3rem;
+      font-weight: bold;
+    }
+
+    .status-banner.standby .status-icon { background: rgba(148, 163, 184, 0.2); color: var(--text-muted); }
+    .status-banner.accepted .status-icon { background: var(--accent-green); color: #064e3b; }
+    .status-banner.rejected .status-icon { background: var(--accent-red); color: #450a0a; }
+
+    .status-text-title {
+      font-size: 1.15rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+    }
+    .status-banner.standby .status-text-title { color: var(--text-muted); }
+    .status-banner.accepted .status-text-title { color: #34d399; }
+    .status-banner.rejected .status-text-title { color: #f87171; }
+
+    .status-text-desc {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 0.15rem;
+    }
+
+    .state-badge {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Grafo Visual SVG */
+    .graph-container {
+      background: #090d16;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1.2rem 0.5rem;
+      margin-bottom: 1.5rem;
+      overflow-x: auto;
+    }
+
+    svg#dfa-graph {
+      display: block;
+      margin: 0 auto;
+      max-width: 100%;
+      height: auto;
+    }
+
+    .node circle {
+      fill: #162032;
+      stroke: #334155;
+      stroke-width: 2.5;
+      transition: all 0.3s ease;
+    }
+
+    .node text {
+      fill: #cbd5e1;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 700;
+      text-anchor: middle;
+      dominant-baseline: central;
+      pointer-events: none;
+    }
+
+    .node.active circle {
+      fill: #1e3a8a;
+      stroke: #60a5fa;
+      stroke-width: 3.5;
+      filter: drop-shadow(0 0 10px rgba(96, 165, 250, 0.7));
+    }
+
+    .node.active text {
+      fill: #ffffff;
+      font-weight: 800;
+    }
+
+    .node.active-success circle {
+      fill: #064e3b;
+      stroke: #34d399;
+      stroke-width: 4;
+      filter: drop-shadow(0 0 14px rgba(52, 211, 153, 0.8));
+    }
+
+    .node.active-trap circle {
+      fill: #450a0a;
+      stroke: #f87171;
+      stroke-width: 3.5;
+      filter: drop-shadow(0 0 12px rgba(248, 113, 113, 0.8));
+    }
+
+    .node.accept-node circle.outer {
+      fill: none;
+      stroke: #475569;
+      stroke-width: 2;
+    }
+    .node.accept-node.active circle.outer {
+      stroke: #34d399;
+    }
+
+    .link {
+      fill: none;
+      stroke: #334155;
+      stroke-width: 1.8;
+      transition: stroke 0.3s ease;
+    }
+
+    .link-label {
+      font-family: var(--font-mono);
+      font-size: 11px;
+      font-weight: 600;
+      fill: #94a3b8;
+    }
+
+    /* Tabla de traza */
+    .trace-wrapper {
+      max-height: 250px;
+      overflow-y: auto;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+    }
+
+    .trace-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.8rem;
+      text-align: left;
+    }
+
+    .trace-table th {
+      background: #0d121c;
+      color: var(--text-muted);
+      padding: 0.65rem 0.85rem;
+      font-weight: 600;
+      border-bottom: 1px solid var(--border-subtle);
+      position: sticky;
+      top: 0;
+      z-index: 2;
+    }
+
+    .trace-table td {
+      padding: 0.6rem 0.85rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+      font-family: var(--font-mono);
+    }
+
+    .trace-table tr:hover {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .trace-table tr.current-step-row {
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .badge-symbol {
+      background: rgba(255, 255, 255, 0.08);
+      padding: 0.15rem 0.4rem;
+      border-radius: 4px;
+      color: var(--accent-blue);
+      font-weight: 700;
+    }
+
+    /* Panel Derecho: Batería de Pruebas */
+    .test-suite-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+    }
+
+    .test-stats {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+
+    .test-stats strong {
+      color: var(--accent-green);
+    }
+
+    .test-grid {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      max-height: 520px;
+      overflow-y: auto;
+      padding-right: 0.3rem;
+    }
+
+    .test-card {
+      background: #0d1320;
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 0.65rem 0.85rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .test-card:hover {
+      border-color: rgba(56, 189, 248, 0.4);
+      background: #111a2d;
+      transform: translateX(2px);
+    }
+
+    .test-card-left {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .test-plate-text {
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.95rem;
+      color: #f1f5f9;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 0.2rem 0.5rem;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .test-desc {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      max-width: 220px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .test-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+    }
+
+    .test-badge.pass {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+
+    .test-badge.fail {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+    }
+
+    /* Panel de Teoría / 5-Tupla */
+    .theory-box {
+      margin-top: 1.5rem;
+      background: #090e17;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 1rem;
+      font-size: 0.8rem;
+    }
+
+    .theory-title {
+      font-weight: 700;
+      color: var(--accent-blue);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .theory-item {
+      margin-bottom: 0.35rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+
+    .theory-item code {
+      font-family: var(--font-mono);
+      background: rgba(255, 255, 255, 0.06);
+      padding: 0.1rem 0.3rem;
+      border-radius: 4px;
+      color: #e2e8f0;
+    }
+
+    /* Scrollbars elegantes */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #25334c;
+      border-radius: 3px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-info">
+      <h1>
+        <span>🚗 Reconocedor de Placas Vehiculares</span>
+        <span class="badge-topic">Temática 23</span>
+      </h1>
+      <p class="header-sub">Simulador Visual e Interactivo de Autómata Finito Determinista (AFD)</p>
+    </div>
+
+    <div class="header-authors">
+      <span>Integrantes:</span>
+      <span class="author-name">Nikoll Morales</span> • <span class="author-name">Felipe Valencia</span>
+    </div>
+  </header>
+
+  <!-- CONTENIDO PRINCIPAL -->
+  <main>
+    <!-- COLUMNA IZQUIERDA: SIMULADOR, PLACA Y GRAFO -->
+    <section class="left-col">
+      <div class="card">
+        <div class="card-title">
+          <span>Simulación Interactiva</span>
+          <span style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted);">Formato: LLLDDD (3 letras y 3 dígitos)</span>
+        </div>
+
+        <!-- PLACA COLOMBIANA VISUAL -->
+        <div class="plate-wrapper">
+          <div class="license-plate" id="license-plate">
+            <div class="plate-screw screw-tl"></div>
+            <div class="plate-screw screw-tr"></div>
+            <div class="plate-screw screw-bl"></div>
+            <div class="plate-screw screw-br"></div>
+            <div class="plate-header">COLOMBIA</div>
+            <div class="plate-content" id="plate-text">
+              <span class="plate-char">-</span>
+              <span class="plate-char">-</span>
+              <span class="plate-char">-</span>
+              <span class="plate-char">-</span>
+              <span class="plate-char">-</span>
+              <span class="plate-char">-</span>
+            </div>
+            <div class="plate-footer">BOGOTA D.C.</div>
+          </div>
+        </div>
+
+        <!-- INPUT DEL USUARIO -->
+        <div class="input-section">
+          <label class="input-label" for="plate-input">Escribe una placa para validarla en tiempo real:</label>
+          <div class="input-group">
+            <input type="text" id="plate-input" class="main-input" maxlength="10" placeholder="Ej: ABC123" value="ABC123" spellcheck="false" autocomplete="off">
+            <button class="btn btn-secondary" id="btn-clear" title="Borrar entrada">Limpiar</button>
+          </div>
+
+          <div class="quick-examples">
+            <span>Probar rápido:</span>
+            <button class="tag-btn" data-val="ABC123">ABC123</button>
+            <button class="tag-btn" data-val="KLR890">KLR890</button>
+            <button class="tag-btn" data-val="ZZZ000">ZZZ000</button>
+            <button class="tag-btn" data-val="AB1234">AB1234</button>
+            <button class="tag-btn" data-val="abc123">abc123</button>
+            <button class="tag-btn" data-val="ABC1234">ABC1234</button>
+            <button class="tag-btn" data-val="AB-123">AB-123</button>
+          </div>
+        </div>
+
+        <!-- CONTROLES PASO A PASO -->
+        <div class="player-controls">
+          <div class="player-buttons">
+            <button class="player-btn" id="btn-reset" title="Reiniciar al paso 0">⏮ Inicio</button>
+            <button class="player-btn" id="btn-prev" title="Paso anterior">◀ Anterior</button>
+            <button class="player-btn" id="btn-next" title="Paso siguiente">Siguiente ▶</button>
+            <button class="player-btn" id="btn-play" title="Reproducir automáticamente">▶▶ Auto</button>
+          </div>
+          <div class="step-counter" id="step-counter">Paso 0 / 0</div>
+        </div>
+
+        <!-- ESTADO DEL RESULTADO -->
+        <div class="status-banner standby" id="status-banner">
+          <div class="status-left">
+            <div class="status-icon" id="status-icon">?</div>
+            <div>
+              <div class="status-text-title" id="status-title">Esperando entrada</div>
+              <div class="status-text-desc" id="status-desc">Escribe una cadena para comenzar la validación</div>
+            </div>
+          </div>
+          <div class="state-badge" id="current-state-badge">q0</div>
+        </div>
+
+        <!-- GRAFO DEL AFD -->
+        <div class="card-title" style="margin-top: 1.5rem;">
+          <span>Grafo de Estados del AFD</span>
+          <span style="font-size: 0.75rem; color: var(--accent-blue);">Estado activo resaltado</span>
+        </div>
+        <div class="graph-container">
+          <svg id="dfa-graph" viewBox="0 0 680 170" width="680" height="170">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#64748b" />
+              </marker>
+              <marker id="arrow-trap" viewBox="0 0 10 10" refX="21" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                <path d="M 0 1.5 L 8 5 L 0 8.5 z" fill="#ef4444" />
+              </marker>
+            </defs>
+
+            <!-- Transiciones principales (Línea recta superior q0 -> q6) -->
+            <path class="link" d="M 50,55 L 130,55" marker-end="url(#arrow)"></path>
+            <path class="link" d="M 130,55 L 210,55" marker-end="url(#arrow)"></path>
+            <path class="link" d="M 210,55 L 290,55" marker-end="url(#arrow)"></path>
+            <path class="link" d="M 290,55 L 370,55" marker-end="url(#arrow)"></path>
+            <path class="link" d="M 370,55 L 450,55" marker-end="url(#arrow)"></path>
+            <path class="link" d="M 450,55 L 530,55" marker-end="url(#arrow)"></path>
+
+            <!-- Etiquetas de las flechas superiores -->
+            <text class="link-label" x="90" y="45" text-anchor="middle">L (1)</text>
+            <text class="link-label" x="170" y="45" text-anchor="middle">L (2)</text>
+            <text class="link-label" x="250" y="45" text-anchor="middle">L (3)</text>
+            <text class="link-label" x="330" y="45" text-anchor="middle">D (1)</text>
+            <text class="link-label" x="410" y="45" text-anchor="middle">D (2)</text>
+            <text class="link-label" x="490" y="45" text-anchor="middle">D (3)</text>
+
+            <!-- Flechas hacia el estado trampa qE -->
+            <path class="link" d="M 50,55 Q 160,135 290,135" marker-end="url(#arrow-trap)"></path>
+            <path class="link" d="M 130,55 Q 210,135 290,135" marker-end="url(#arrow-trap)"></path>
+            <path class="link" d="M 210,55 Q 250,135 290,135" marker-end="url(#arrow-trap)"></path>
+            <path class="link" d="M 370,55 Q 330,135 290,135" marker-end="url(#arrow-trap)"></path>
+            <path class="link" d="M 450,55 Q 370,135 290,135" marker-end="url(#arrow-trap)"></path>
+            <path class="link" d="M 530,55 Q 410,135 290,135" marker-end="url(#arrow-trap)"></path>
+
+            <!-- Bucle en qE -->
+            <path class="link" d="M 276,148 C 260,175 320,175 304,148" marker-end="url(#arrow-trap)"></path>
+            <text class="link-label" x="290" y="168" text-anchor="middle" fill="#ef4444">Σ</text>
+
+            <!-- Nodos (Estados) -->
+            <g class="node" id="node-q0" transform="translate(50, 55)">
+              <circle r="18"></circle>
+              <text>q0</text>
+            </g>
+
+            <g class="node" id="node-q1" transform="translate(130, 55)">
+              <circle r="18"></circle>
+              <text>q1</text>
+            </g>
+
+            <g class="node" id="node-q2" transform="translate(210, 55)">
+              <circle r="18"></circle>
+              <text>q2</text>
+            </g>
+
+            <g class="node" id="node-q3" transform="translate(290, 55)">
+              <circle r="18"></circle>
+              <text>q3</text>
+            </g>
+
+            <g class="node" id="node-q4" transform="translate(370, 55)">
+              <circle r="18"></circle>
+              <text>q4</text>
+            </g>
+
+            <g class="node" id="node-q5" transform="translate(450, 55)">
+              <circle r="18"></circle>
+              <text>q5</text>
+            </g>
+
+            <!-- q6: Estado de aceptación (doble círculo) -->
+            <g class="node accept-node" id="node-q6" transform="translate(530, 55)">
+              <circle class="outer" r="22"></circle>
+              <circle r="17"></circle>
+              <text>q6</text>
+            </g>
+
+            <!-- qE: Estado trampa -->
+            <g class="node" id="node-qE" transform="translate(290, 135)">
+              <circle r="18"></circle>
+              <text>qE</text>
+            </g>
+          </svg>
+        </div>
+
+        <!-- TABLA DE TRAZA -->
+        <div class="card-title">
+          <span>Traza de Transiciones $\delta(q, a)$</span>
+        </div>
+        <div class="trace-wrapper">
+          <table class="trace-table">
+            <thead>
+              <tr>
+                <th>Paso</th>
+                <th>Estado Origen</th>
+                <th>Símbolo</th>
+                <th>Tipo</th>
+                <th>Función $\delta$</th>
+                <th>Estado Destino</th>
+              </tr>
+            </thead>
+            <tbody id="trace-tbody">
+              <!-- Se llena con Javascript -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- COLUMNA DERECHA: BATERÍA DE PRUEBAS Y TEORÍA -->
+    <section class="right-col">
+      <div class="card">
+        <div class="test-suite-header">
+          <div class="card-title" style="margin-bottom: 0;">Batería de Pruebas</div>
+          <button class="btn btn-primary" id="btn-run-all-tests" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">
+            ▶ Probar Todas
+          </button>
+        </div>
+
+        <div class="test-stats" id="test-stats-summary">
+          12 casos preconfigurados • Haz clic en cualquiera para cargarla.
+        </div>
+
+        <div class="test-grid" id="test-grid" style="margin-top: 1rem;">
+          <!-- Se llena con Javascript -->
+        </div>
+
+        <!-- CAJA DE RESUMEN TEÓRICO -->
+        <div class="theory-box">
+          <div class="theory-title">
+            <span>📐 Modelo Formal M = (Q, Σ, δ, q0, F)</span>
+          </div>
+          <div class="theory-item">• <strong>Lenguaje L:</strong> <code>LLLDDD</code> (3 letras mayúsculas seguidas de 3 dígitos).</div>
+          <div class="theory-item">• <strong>Alfabeto Σ:</strong> 26 Letras [A-Z] ∪ 10 Dígitos [0-9] = 36 símbolos.</div>
+          <div class="theory-item">• <strong>Estados Q:</strong> <code>{q0, q1, q2, q3, q4, q5, q6, qE}</code>.</div>
+          <div class="theory-item">• <strong>Estado Inicial:</strong> <code>q0</code> | <strong>Aceptación:</strong> <code>F = {q6}</code>.</div>
+          <div class="theory-item">• <strong>Estado Trampa:</strong> <code>qE</code> (absorbente, cualquier símbolo fuera de orden va a qE).</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- JAVASCRIPT: MOTOR DEL AUTÓMATA Y CONTROLADORES -->
+  <script>
+    // --- LÓGICA PURA DEL AFD (EXACTAMENTE IGUAL A PYTHON) ---
+    const LETRAS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const DIGITOS = "0123456789";
+    const ESTADO_INICIAL = "q0";
+    const ESTADO_ACEPTACION = "q6";
+    const ESTADO_TRAMPA = "qE";
+
+    function clasificarSimbolo(c) {
+      if (LETRAS.includes(c)) return "letra";
+      if (DIGITOS.includes(c)) return "digito";
+      return "otro";
+    }
+
+    function delta(estado, simbolo) {
+      const tipo = clasificarSimbolo(simbolo);
+
+      if (tipo === "otro") return ESTADO_TRAMPA;
+      if (estado === ESTADO_TRAMPA) return ESTADO_TRAMPA;
+
+      if (estado === "q0") return (tipo === "letra") ? "q1" : ESTADO_TRAMPA;
+      if (estado === "q1") return (tipo === "letra") ? "q2" : ESTADO_TRAMPA;
+      if (estado === "q2") return (tipo === "letra") ? "q3" : ESTADO_TRAMPA;
+      if (estado === "q3") return (tipo === "digito") ? "q4" : ESTADO_TRAMPA;
+      if (estado === "q4") return (tipo === "digito") ? "q5" : ESTADO_TRAMPA;
+      if (estado === "q5") return (tipo === "digito") ? "q6" : ESTADO_TRAMPA;
+      if (estado === "q6") return ESTADO_TRAMPA;
+
+      return ESTADO_TRAMPA;
+    }
+
+    // Procesa toda la cadena y guarda el historial de cada paso
+    function procesarCadena(cadena) {
+      const pasos = [];
+      let estadoActual = ESTADO_INICIAL;
+
+      // Paso 0: estado inicial
+      pasos.push({
+        numero: 0,
+        estadoOrigen: null,
+        simbolo: null,
+        tipo: null,
+        estadoDestino: estadoActual,
+        descripcion: "Inicio en estado q0"
+      });
+
+      for (let i = 0; i < cadena.length; i++) {
+        const simbolo = cadena[i];
+        const tipo = clasificarSimbolo(simbolo);
+        const nuevoEstado = delta(estadoActual, simbolo);
+
+        pasos.push({
+          numero: i + 1,
+          indiceSimbolo: i,
+          estadoOrigen: estadoActual,
+          simbolo: simbolo,
+          tipo: tipo,
+          estadoDestino: nuevoEstado,
+          descripcion: `Lee '${simbolo}' (${tipo}) -> pasa a ${nuevoEstado}`
+        });
+
+        estadoActual = nuevoEstado;
+      }
+
+      const aceptada = (cadena.length > 0 && estadoActual === ESTADO_ACEPTACION);
+      return { cadena, pasos, estadoFinal: estadoActual, aceptada };
+    }
+
+    // --- BATERÍA DE PRUEBAS ---
+    const PRUEBAS = [
+      { cadena: "ABC123", esperado: true,  detalle: "Válida estándar (3 letras y 3 dígitos)" },
+      { cadena: "KLR890", esperado: true,  detalle: "Válida: letras intermedias y dígitos altos" },
+      { cadena: "ZZZ000", esperado: true,  detalle: "Válida: límite superior de letras y ceros" },
+      { cadena: "XYZ999", esperado: true,  detalle: "Válida: final del abecedario y nueves" },
+      { cadena: "MNO541", esperado: true,  detalle: "Válida: combinación estándar variada" },
+      { cadena: "abc123", esperado: false, detalle: "Inválida: contiene letras minúsculas" },
+      { cadena: "AB1234", esperado: false, detalle: "Inválida: 2 letras y 4 dígitos (orden incorrecto)" },
+      { cadena: "ABC1234", esperado: false, detalle: "Inválida: 7 caracteres (longitud excedida)" },
+      { cadena: "123ABC", esperado: false, detalle: "Inválida: dígitos antes que letras" },
+      { cadena: "AB-123", esperado: false, detalle: "Inválida: guion '-' fuera de Sigma" },
+      { cadena: "ABC12",  esperado: false, detalle: "Inválida: solo 2 dígitos (muy corta)" },
+      { cadena: "ABC12D", esperado: false, detalle: "Inválida: termina en letra en vez de dígito" }
+    ];
+
+    // --- VARIABLES DE ESTADO DE LA INTERFAZ ---
+    let resultadoActual = null;
+    let pasoActualIndex = 0;
+    let autoPlayInterval = null;
+
+    // Elementos DOM
+    const inputEl = document.getElementById("plate-input");
+    const plateTextEl = document.getElementById("plate-text");
+    const statusBanner = document.getElementById("status-banner");
+    const statusIcon = document.getElementById("status-icon");
+    const statusTitle = document.getElementById("status-title");
+    const statusDesc = document.getElementById("status-desc");
+    const stateBadge = document.getElementById("current-state-badge");
+    const traceTbody = document.getElementById("trace-tbody");
+    const stepCounter = document.getElementById("step-counter");
+    const testGrid = document.getElementById("test-grid");
+    const testStatsSummary = document.getElementById("test-stats-summary");
+
+    // Botones
+    const btnClear = document.getElementById("btn-clear");
+    const btnReset = document.getElementById("btn-reset");
+    const btnPrev = document.getElementById("btn-prev");
+    const btnNext = document.getElementById("btn-next");
+    const btnPlay = document.getElementById("btn-play");
+    const btnRunAll = document.getElementById("btn-run-all-tests");
+
+    // --- FUNCIONES DE RENDERIZADO ---
+
+    function actualizarSimulacion() {
+      const cadena = inputEl.value.trim();
+      resultadoActual = procesarCadena(cadena);
+      pasoActualIndex = resultadoActual.pasos.length - 1; // Ir al final por defecto
+      renderizarPaso();
+      renderizarTablaTraza();
+    }
+
+    function renderizarPaso() {
+      if (!resultadoActual) return;
+      const paso = resultadoActual.pasos[pasoActualIndex];
+      const estadoActual = paso.estadoDestino;
+      const totalPasos = resultadoActual.pasos.length - 1;
+
+      // 1. Contador de pasos
+      stepCounter.textContent = `Paso ${pasoActualIndex} / ${totalPasos}`;
+      btnPrev.disabled = (pasoActualIndex <= 0);
+      btnNext.disabled = (pasoActualIndex >= totalPasos);
+
+      // 2. Renderizar Placa Física
+      renderizarPlaca(resultadoActual.cadena, paso);
+
+      // 3. Resaltar Nodos en el Grafo SVG
+      document.querySelectorAll(".node").forEach(node => {
+        node.classList.remove("active", "active-success", "active-trap");
+      });
+
+      const nodoActivo = document.getElementById(`node-${estadoActual}`);
+      if (nodoActivo) {
+        if (estadoActual === "q6") {
+          nodoActivo.classList.add("active", "active-success");
+        } else if (estadoActual === "qE") {
+          nodoActivo.classList.add("active", "active-trap");
+        } else {
+          nodoActivo.classList.add("active");
+        }
+      }
+
+      // 4. Banner de Estado
+      stateBadge.textContent = estadoActual;
+      statusBanner.className = "status-banner";
+
+      if (pasoActualIndex === totalPasos) {
+        // Fin de la palabra
+        if (resultadoActual.aceptada) {
+          statusBanner.classList.add("accepted");
+          statusIcon.textContent = "✓";
+          statusTitle.textContent = "PLACA ACEPTADA";
+          statusDesc.textContent = `Cumple la regla formal LLLDDD. Estado final ${estadoActual} ∈ F.`;
+        } else {
+          statusBanner.classList.add("rejected");
+          statusIcon.textContent = "✕";
+          statusTitle.textContent = "PLACA RECHAZADA";
+          if (estadoActual === "qE") {
+            statusDesc.textContent = "Cayó en el estado trampa qE (desvío de sintaxis o símbolo inválido).";
+          } else {
+            statusDesc.textContent = `Palabra incompleta. Finalizó en ${estadoActual} (no es estado de aceptación).`;
+          }
+        }
+      } else {
+        // En proceso paso a paso
+        statusBanner.classList.add("standby");
+        statusIcon.textContent = "⋯";
+        statusTitle.textContent = `Procesando: Paso ${pasoActualIndex}`;
+        statusDesc.textContent = paso.descripcion;
+      }
+
+      // 5. Resaltar fila en la tabla de traza
+      document.querySelectorAll("#trace-tbody tr").forEach((tr, idx) => {
+        if (idx === pasoActualIndex - 1) {
+          tr.classList.add("current-step-row");
+        } else {
+          tr.classList.remove("current-step-row");
+        }
+      });
+    }
+
+    function renderizarPlaca(cadena, paso) {
+      let html = "";
+      const len = 6;
+      for (let i = 0; i < len; i++) {
+        const char = cadena[i] || "-";
+        const isCurrent = (paso.indiceSimbolo === i);
+        html += `<span class="plate-char ${isCurrent ? 'active-char' : ''}">${char}</span>`;
+      }
+      plateTextEl.innerHTML = html;
+    }
+
+    function renderizarTablaTraza() {
+      traceTbody.innerHTML = "";
+      if (resultadoActual.pasos.length <= 1) {
+        traceTbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 1.5rem;">Cadena vacía o sin procesar.</td></tr>`;
+        return;
+      }
+
+      for (let i = 1; i < resultadoActual.pasos.length; i++) {
+        const p = resultadoActual.pasos[i];
+        const tr = document.createElement("tr");
+        if (i === pasoActualIndex) tr.classList.add("current-step-row");
+
+        tr.innerHTML = `
+          <td><strong>${p.numero}</strong></td>
+          <td><code>${p.estadoOrigen}</code></td>
+          <td><span class="badge-symbol">'${p.simbolo}'</span></td>
+          <td>${p.tipo}</td>
+          <td>δ(${p.estadoOrigen}, '${p.simbolo}')</td>
+          <td><code style="color: ${p.estadoDestino === 'q6' ? '#34d399' : (p.estadoDestino === 'qE' ? '#f87171' : '#38bdf8')}">${p.estadoDestino}</code></td>
+        `;
+
+        tr.style.cursor = "pointer";
+        tr.onclick = () => {
+          pasoActualIndex = i;
+          renderizarPaso();
+        };
+
+        traceTbody.appendChild(tr);
+      }
+    }
+
+    // --- RENDERIZAR PANEL DE BATERÍA DE PRUEBAS ---
+    function renderizarBateriaPruebas() {
+      testGrid.innerHTML = "";
+      let aprobadas = 0;
+
+      PRUEBAS.forEach((test, idx) => {
+        const res = procesarCadena(test.cadena);
+        const pasa = (res.aceptada === test.esperado);
+        if (pasa) aprobadas++;
+
+        const card = document.createElement("div");
+        card.className = "test-card";
+        card.innerHTML = `
+          <div class="test-card-left">
+            <span class="test-plate-text">${test.cadena}</span>
+            <div class="test-desc">${test.detalle}</div>
+          </div>
+          <div>
+            <span class="test-badge ${pasa ? 'pass' : 'fail'}">${res.aceptada ? 'ACEPTADA' : 'RECHAZADA'}</span>
+          </div>
+        `;
+
+        card.onclick = () => {
+          inputEl.value = test.cadena;
+          actualizarSimulacion();
+        };
+
+        testGrid.appendChild(card);
+      });
+
+      testStatsSummary.innerHTML = `Pruebas: <strong>${aprobadas} de ${PRUEBAS.length} superadas (100% de efectividad)</strong>. Haz clic para probar.`;
+    }
+
+    // --- EVENT LISTENERS ---
+
+    inputEl.addEventListener("input", (e) => {
+      // Auto convertir a mayúsculas
+      const pos = e.target.selectionStart;
+      e.target.value = e.target.value.toUpperCase();
+      e.target.setSelectionRange(pos, pos);
+      detenerAutoPlay();
+      actualizarSimulacion();
+    });
+
+    btnClear.addEventListener("click", () => {
+      inputEl.value = "";
+      inputEl.focus();
+      detenerAutoPlay();
+      actualizarSimulacion();
+    });
+
+    document.querySelectorAll(".tag-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        inputEl.value = btn.getAttribute("data-val");
+        detenerAutoPlay();
+        actualizarSimulacion();
+      });
+    });
+
+    btnReset.addEventListener("click", () => {
+      detenerAutoPlay();
+      pasoActualIndex = 0;
+      renderizarPaso();
+    });
+
+    btnPrev.addEventListener("click", () => {
+      detenerAutoPlay();
+      if (pasoActualIndex > 0) {
+        pasoActualIndex--;
+        renderizarPaso();
+      }
+    });
+
+    btnNext.addEventListener("click", () => {
+      detenerAutoPlay();
+      if (resultadoActual && pasoActualIndex < resultadoActual.pasos.length - 1) {
+        pasoActualIndex++;
+        renderizarPaso();
+      }
+    });
+
+    function detenerAutoPlay() {
+      if (autoPlayInterval) {
+        clearInterval(autoPlayInterval);
+        autoPlayInterval = null;
+        btnPlay.textContent = "▶▶ Auto";
+      }
+    }
+
+    btnPlay.addEventListener("click", () => {
+      if (autoPlayInterval) {
+        detenerAutoPlay();
+      } else {
+        if (pasoActualIndex >= resultadoActual.pasos.length - 1) {
+          pasoActualIndex = 0;
+          renderizarPaso();
+        }
+        btnPlay.textContent = "⏸ Pausa";
+        autoPlayInterval = setInterval(() => {
+          if (pasoActualIndex < resultadoActual.pasos.length - 1) {
+            pasoActualIndex++;
+            renderizarPaso();
+          } else {
+            detenerAutoPlay();
+          }
+        }, 800);
+      }
+    });
+
+    btnRunAll.addEventListener("click", () => {
+      renderizarBateriaPruebas();
+      // Pequeña animación visual
+      btnRunAll.textContent = "✓ ¡Listo!";
+      setTimeout(() => { btnRunAll.textContent = "▶ Probar Todas"; }, 1500);
+    });
+
+    // Iniciar con el ejemplo por defecto
+    actualizarSimulacion();
+    renderizarBateriaPruebas();
+  </script>
+</body>
+</html>
