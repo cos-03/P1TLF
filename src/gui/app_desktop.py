@@ -6,11 +6,17 @@
 # RESTRICCION: 100% Python estandar con Tkinter (sin pip install, sin re)
 # ==============================================================================
 
+import os
+import sys
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-# Importamos la logica formal ya construida en validador_placas.py
-from validador_placas import (
+# Soporte para ejecución directa (python src/gui/app_desktop.py) y como módulo
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+if BASE_DIR not in sys.path:
+    sys.path.insert(0, BASE_DIR)
+
+from src.core.validador import (
     LETRAS_VALIDAS,
     DIGITOS_VALIDOS,
     ESTADO_INICIAL,
