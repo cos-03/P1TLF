@@ -1,0 +1,14 @@
+# ==============================================================================
+# DEPENDENCIAS DEL PROYECTO - RECONOCEDOR AFD PLACAS COLOMBIA
+# ==============================================================================
+# El núcleo formal del proyecto (src/core), la interfaz de escritorio (src/gui)
+# y las pruebas (tests) fueron desarrollados estrictamente en PYTHON ESTÁNDAR
+# (sin 'import re', sin paquetes externos obligatorios de pip).
+#
+# Requisitos mínimos:
+#   - Python 3.8 o superior
+#   - Tkinter (incluido por defecto en instalaciones oficiales de Python para Windows)
+#
+# Dependencias opcionales para desarrollo y notebooks:
+jupyter>=1.0.0
+pytest>=7.0.0
